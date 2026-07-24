@@ -1,0 +1,4 @@
+#NEXUS
+begin trees;
+	tree TREE1 = [&R] ((((wTei:1.55E-4,wYak:7.7E-5,wSan_Cooper2019:1.55E-4):0.00198,(Mel_CS_berk:1.78E-4,(mel_pc75:1.8E-5,mel_FFD25:1.8E-5):1.88E-4):0.002114):0.022112,((wAura_Turelli2018:2.6E-4,(wSuz_Soizios2013:1.85E-4,wRi:2.3E-4):2.86E-4):0.03438,(wHa:2.12E-4,LD15:1.4E-4):0.034402):0.013613):0.44263,(wNo_Ellegaard2013:0.003,wMau:8.11E-4):0.44263);
+end;

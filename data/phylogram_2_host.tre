@@ -1,0 +1,4 @@
+#NEXUS
+begin trees;
+	tree TREE1 = [&R] (((((DSech:0.022686,mauritiana:0.015044,DSim:0.023765):0.016646,(DMel_CSBerk:0.003162,DMel_FFD25:0.002984,DMel_PC75:0.003071):0.093322):0.053055,((DYak:0.013825,san-Quija630-39:0.011607):0.019947,teis-cascade_4_2:0.022338):0.05237):0.15032,DSuz:0.158818):0.194142,auraria_bronski:0.194142);
+end;
