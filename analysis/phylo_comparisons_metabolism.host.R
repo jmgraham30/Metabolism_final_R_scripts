@@ -50,12 +50,8 @@ hague_df <- read_csv("data/metabolism_summaryData.csv")
 hague_df <- hague_df |>
   filter(!is.na(flyID) & !is.na(Weight_mg)) |>
   filter(is.na(Notes)) |>
-  mutate(aveSMRpl = log10(aveSMR + abs(min(aveSMR) + 1))) |>
   mutate(log_aveSMR = log10(aveSMR)) |>
   mutate(log_Weight = log10(Weight_mg))
-
-# scaling: log10(aveSMR + abs(min(aveSMR) + 1))
-shift <- abs(min(hague_df$aveSMR, na.rm = TRUE) + 1)
 
 # re-level Infected factor so U is the reference level
 hague_df <- hague_df |>
@@ -110,7 +106,6 @@ check_model(weightFIT, check = c("normality", "linearity", "homogeneity", "outli
 
 #Type III SS
 car::Anova(weightFIT, type="III") 
-# drop1(weightFIT, ~., test="F") #redundant
 
 #--------------E-PLGS linear model to test if weight differs by species------------
 # Adams & Collyer (2024) Methods in Ecology and Evolution
@@ -123,7 +118,6 @@ C <- vcv.phylo(host.tree)
 e_pgls_model <- extended.pgls(
   f1 = Weight_mg ~ Genotype + Sex,  
   data = hague_df_weight_reduced_U, #Include all Dsim in analysis
-  # data = subset(hague_df_weight_reduced_U, !(Genotype %in% c("Car5", "sim198"))),  
   species = "Host",
   phy = host.tree)
 
@@ -162,7 +156,7 @@ plotTree(host.tree, type="phylogram")
 #Check for concordance between tree and trait data
 name.check(host.tree, weight_means)
 
-#break polytomies randomly -----> should probably mention this in the manuscript
+#break polytomies randomly
 set.seed(42)
 host.tree <- multi2di(host.tree, random=TRUE) #for subsequent analyses
 plotTree(host.tree, type="phylogram")
@@ -248,7 +242,6 @@ lsmean_table <- metabolic_activity_models |>
 lsmean_table$weight_model <- "No_Weight"
 
 lsmean_table <- lsmean_table |>
-  # filter(Genotype != "sim198") |>
   mutate(Genotype = factor(Genotype, levels=c("mau31", "sim198", "sech", "Car5","auraL2", "suz", "R84", "teiB13L11", "san", "yakB13L5", "PC75", "FFD25", "CSBerk"))) |>
   arrange(desc(Genotype))
 
@@ -273,7 +266,7 @@ plotTree(host.tree, type="phylogram")
 #Check for concordance between tree and trait data
 name.check(host.tree, lsmean_table)
 
-#break polytomies randomly -----> should probably mention this in the manuscript
+#break polytomies randomly
 # host.tree <- multi2di(host.tree, random=TRUE) #for subsequent analyses
 # plotTree(host.tree, type="phylogram")
 
@@ -338,14 +331,13 @@ e_pgls_model <- extended.pgls(
   f1 = log_aveSMR ~ Genotype + Sex + log_Weight + Sex*log_Weight +
           aveTempC + aveLight_Lux + SMRstart.sec + aveFRC_mlmin + aveWVppt + aveActivity,  
           data = hague_df_SMR_U_reduced, #Include all Dsim in analysis
-          # data = subset(hague_df_SMR_reduced_U, !(Genotype %in% c("Car5", "sim198"))),  
           species = "Host",
           phy = host.tree)
 
 anova(e_pgls_model)
 
 #---------------------------------------------------------------------------------
-#--- Extract allometric slopes and 95% CIs ---------------------------------------
+#--- Extract mass scaling exponent slopes and 95% CIs ----------------------------
 #---------------------------------------------------------------------------------
 iso_slope <- 1   # isometric expectation to test against
 
@@ -362,10 +354,6 @@ cat("LMM pooled slope:", round(lmm_pooled_b, 4),
 lmm_sex_trends    <- emtrends(SMR_fit, ~ Sex, var = "log_Weight")
 lmm_sex_trends_df <- as.data.frame(summary(lmm_sex_trends, infer = TRUE, level = 0.95))
 lmm_sex_trends_df
-
-#---------------------------------------------------------------------------------
-#--- Plot: genotype x sex means (+/- 1 SD) with a simple lm line per sex ---------
-#---------------------------------------------------------------------------------
 
 geno_means_lmm <- hague_df_SMR_U |>
   group_by(Genotype, Sex) |>
@@ -456,7 +444,6 @@ lsmean_table_weight <- metabolic_activity_models_weight |>
 lsmean_table_weight$weight_model <- "Weight_Only"
 
 lsmean_table_weight <- lsmean_table_weight |>
-  # filter(Genotype != "sim198") |>
   mutate(Genotype = factor(Genotype, levels=c("mau31", "sim198", "sech", "Car5","auraL2", "suz", "R84", "teiB13L11", "san", "yakB13L5", "PC75", "FFD25", "CSBerk"))) |>
   arrange(desc(Genotype))
 
@@ -481,7 +468,7 @@ plotTree(host.tree, type="phylogram")
 #Check for concordance between tree and trait data
 name.check(host.tree, lsmean_table_weight)
 
-#break polytomies randomly -----> should probably mention this in the manuscript
+#break polytomies randomly
 # host.tree <- multi2di(host.tree, random=TRUE) #for subsequent analyses
 # plotTree(host.tree, type="phylogram")
 
@@ -570,32 +557,6 @@ p3
 # simTree_50_geiger <- treedata(simTree_50, simData_50)
 # phylosig(simTree_50_geiger$phy, simTree_50_geiger$data, method = "lambda", test = TRUE)
 
-# n = 100 taxa
-# simTree_100 <- sim.bdtree(n=100)
-# simData_100 <- sim.char(phytools::rescale(simTree_100, "lambda", est_obs), 1)[,1,]
-# bm_v_lambda_sim100_F_U <- pmc(simTree_100, simData_100, "BM", "lambda", nboot = 1000)
-# save(bm_v_lambda_sim100_F_U, file="bm_v_lambda_sim100F_U.Rda")
-# load("bm_v_lambda_sim100F_U.Rda")
-# 
-# lambdas_sim100 <- bm_v_lambda_sim100_F_U$par_dists %>% filter(comparison=="BB", parameter=="lambda")
-# 
-# est_sim100 <- coef(bm_v_lambda_sim100_F_U[["B"]])[["lambda"]]
-# est_sim100
-# 
-# mean(lambdas_sim100$value)
-# cast(lambdas_sim100, comparison ~ parameter, function(x) quantile(x, c(0.025, 0.975)), value = c("lower", "upper"))
-# 
-# p4 <- ggplot(lambdas_sim100) +
-#   geom_histogram(aes(value), bins=50) +
-#   geom_vline(xintercept=est_sim100, linetype="dashed") +
-#   coord_cartesian(xlim=c(0, 1)) +
-#   scale_x_continuous(breaks = c(0, 0.25, 0.5, 0.75, 1))+
-#   labs(x="Estimated lambda", y="Count")
-# p4
-
-# simTree_100_geiger <- treedata(simTree_100, simData_100)
-# phylosig(simTree_100_geiger$phy, simTree_100_geiger$data, method = "lambda", test = TRUE)
-
 finalPlot <- ggarrange(p1, p2, p3, ncol=3)
 
 ggsave("output/pmc_simulations_F_U.pdf", finalPlot, width=9, height=3, dpi=300, useDingbats=FALSE)
@@ -644,15 +605,12 @@ p6 <- ggplot(subset(weight_means_melt, !(Genotype %in% c("Car5", "sim198"))),
                     ymax=Upper),
                 width=0.3, alpha=1,
                 position = dodge) +
-  # geom_point(size=2, position = dodge) +
   geom_point(aes(shape=Sex),
     colour="black", fill="gray80", size=2, position=dodge) +
-  # facet_wrap(. ~ Sex) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
   scale_x_discrete(limits=rev) + #reverse order of crosses
   scale_y_continuous(breaks=c(0.5,1,1.5)) +
   coord_flip() +
-  # annotation_logticks(sides="b") +
   guides(color = guide_legend(reverse=TRUE)) +
   ylab("mean weight (mg)")
 p6
@@ -678,16 +636,11 @@ p7 <- ggplot(subset(lsmean_long_U, !(Genotype %in% c("Car5", "sim198"))),
                     ymax=upper.CL),
                 width=0.3, alpha=1,
                 position = dodge) +
-  # geom_point(size=2, position = dodge) +
   geom_point(aes(shape=Sex),
              colour="black", fill="gray80", size=2, position=dodge) +
-  # facet_wrap(. ~ Sex) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
   scale_x_discrete(limits=rev) + #reverse order of crosses
-  # scale_y_continuous(breaks=c(1.4,1.6,1.8,2.0))+
   coord_flip() +
-  # scale_y_continuous(trans = 'log10') +
-  # annotation_logticks(sides="b") +
   guides(color = guide_legend(reverse=TRUE)) +
   ylab("LS mean SMR (nmol min-1)")
 p7
@@ -714,16 +667,11 @@ p8 <- ggplot(subset(lsmean_long_weight_U, !(Genotype %in% c("Car5", "sim198"))),
                     ymax=upper.CL),
                 width=0.3, alpha=1,
                 position = dodge) +
-  # geom_point(size=2, position = dodge) +
   geom_point(aes(shape=Sex),
              colour="black", fill="gray80", size=2, position=dodge) +
-  # facet_wrap(. ~ Sex) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
   scale_x_discrete(limits=rev) + #reverse order of crosses
-  # scale_y_continuous(breaks=c(1.4,1.6,1.8,2.0))+
   coord_flip() +
-  # scale_y_continuous(trans = 'log10') +
-  # annotation_logticks(sides="b") +
   guides(color = guide_legend(reverse=TRUE)) +
   ylab("mass-adjusted LS mean SMR (nmol min-1)")
 p8

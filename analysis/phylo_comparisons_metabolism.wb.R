@@ -67,7 +67,6 @@ p1 <- ggtree(wb_wNo.tree) +
   geom_tiplab(align=TRUE) +
   scale_x_continuous(expand=expansion(0.5)) + # make more room for the labels
   geom_treescale() 
-  # geom_text(aes(label=node))
 p1
 
 p1 <- flip(p1, 4, 19)
@@ -82,7 +81,7 @@ D.perms <- 1000
 
 #-----------Test for phylogenetic signal of weight data----------------------------------
 #-----------Phylogenetic signal of discrete traits using Fritz and Purvis' D-------------
-#https://wiki.duke.edu/display/AnthroTree/5.5.1+Fritz+and+Purvis%27+D+in+R
+#https://duke.atlassian.net/wiki/spaces/AnthroTree/pages/15926294/5.5.1+Fritz+and+Purvis+D+in+R
 #D is expected to be close to 1 if traits are random with regard to phylogeny 
 #      (i.e. Probability of E(D) resulting from no (random) phylogenetic structure, is D significantly different from 1)
 #close to 0 if binary traits are determined by an underlying continuous trait following a Brownian motion random walk model of evolution 
@@ -112,8 +111,6 @@ p2 <- ggplot(as.data.frame(D.result$Permutations), aes(x=random)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 p2
 
-# ggsave("output/D_results_weight.pdf", plot = p2, width = 8, height = 4, dpi=300, useDingbats=FALSE)
-
 #-----------Test for phylogenetic signal of metabolic data-------------------------------
 #-----------Phylogenetic signal of discrete traits using Fritz and Purvis' D-------------
 
@@ -138,8 +135,6 @@ p3 <- ggplot(as.data.frame(D.result$Permutations), aes(x=random)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 p3
 
-# ggsave("output/D_results_weight.pdf", plot = p3, width = 8, height = 4, dpi=300, useDingbats=FALSE)
-
 # Calculate D statistic for SMR analysis with adjusted weight
 D.result <- phylo.d(data=wb.comparative, binvar = Weight, permut = 1000)
 D.result
@@ -157,7 +152,6 @@ p4 <- ggplot(as.data.frame(D.result$Permutations), aes(x=random)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 p4
 
-# ggsave("output/D_results_weight.pdf", plot = p4, width = 8, height = 4, dpi=300, useDingbats=FALSE)
 
 #----------------------Visualize data-------------------------
 #-----------Build tree-------------------------------------
@@ -166,7 +160,6 @@ p5 <- ggtree(wb.tree) +
   geom_tiplab(align=TRUE) +
   scale_x_continuous(expand=expansion(0.5)) + # make more room for the labels
   geom_treescale()
-# geom_text(aes(label=node))
 p5
 
 p5 <- flip(p5, 9, 23)
@@ -179,12 +172,8 @@ p5
 hague_df <- hague_df |>
   filter(!is.na(flyID) & !is.na(Weight_mg)) |>
   filter(is.na(Notes)) |>
-  mutate(aveSMRpl = log10(aveSMR + abs(min(aveSMR) + 1))) |>
   mutate(log_aveSMR = log10(aveSMR)) |>
   mutate(log_Weight = log10(Weight_mg))
-
-# scaling: log10(aveSMR + abs(min(aveSMR) + 1))
-shift <- abs(min(hague_df$aveSMR, na.rm = TRUE) + 1)
 
 hague_df <- hague_df |>
   mutate(Infected = relevel(factor(Infected),ref="U"),
@@ -226,26 +215,6 @@ weight_means_melt <- hague_df_weight_reduced %>%
   summarise(as_tibble(as.list(smean.cl.normal(Weight_mg, conf.int=0.95))))
 
 #--------------summarize all weight data and generate figure--------------------------------------
-## Plot all data
-# dodge <- position_dodge(width = 0.5)
-# weight_min <- min(hague_df_weight_reduced$Weight_mg)
-# weight_max <- max(hague_df_weight_reduced$Weight_mg)
-# 
-# p6 <- ggplot(subset(hague_df_weight_reduced, Genotype != "sim198"), aes(Genotype, y=Weight_mg, fill=Infected, group=interaction(Genotype, Infected))) +
-#   geom_violin(position=dodge, aes(fill=Infected)) +
-#   stat_summary(fun=median, geom="point", position=dodge, size=1.5, color="black") +
-#   # geom_boxplot(width = 0.5, outlier.shape = NA, position=dodge, fill="white") +
-#   scale_fill_manual(values=c("gray80", "brown1")) +
-#   # geom_point(size=.1, position=position_jitterdodge(dodge.width=0.5, jitter.width=.07, jitter.height = 0)) +
-#   scale_y_continuous(limits = c(weight_min, weight_max), trans = 'log10') +
-#   facet_wrap(. ~ Sex) +
-#   scale_x_discrete(limits=rev) + #reverse order of crosses
-#   annotation_logticks(sides="b") +
-#   coord_flip() +
-#   guides(color = guide_legend(reverse=TRUE)) +
-#   ylab("Weight (mg)")
-# p6
-
 ## Plot mean data
 dodge <- position_dodge(width = .5)
 
@@ -261,58 +230,10 @@ p7 <- ggplot(weight_means_melt, aes(Genotype, y=Mean, group=group)) +
   geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-  # scale_x_discrete(limits=rev) + #reverse order of crosses
+
   scale_y_continuous(breaks=c(0.5,1,1.5)) +
-  # coord_flip() +
-  # annotation_logticks(sides="b") +
-  # guides(color = guide_legend(reverse=TRUE)) +
   ylab("mean weight (mg)")
 p7
-
-# weight_means_melt <- weight_means_melt %>%
-#   mutate(group = interaction(Sex, Infected, sep = "_"),
-#          group = factor(group, levels = c("M_I", "M_U", "F_I", "F_U")))
-# 
-# weight_means_melt$Infected <- factor(weight_means_melt$Infected, levels = c("I", "U"))
-
-# p8 <- ggplot(subset(weight_means_melt, !(Genotype %in% c("sim198"))), aes(Genotype, y=Mean, group=group)) +
-#   geom_errorbar(aes(ymin=Lower,
-#                     ymax=Upper),
-#                 width=0.3, alpha=1,
-#                 position = dodge) +
-#   geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
-#   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
-#   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-#   scale_x_discrete(limits=rev) + #reverse order of crosses
-#   scale_y_continuous(breaks=c(0.5,1,1.5)) +
-#   coord_flip() +
-#   # annotation_logticks(sides="b") +
-#   guides(color = guide_legend(reverse=TRUE)) +
-#   ylab("mean weight (mg)")
-# p8
-
-## Plot mean data where each genotype has it's own plot
-# weight_means_melt$group <- factor(
-#   weight_means_melt$group,
-#   levels = c("M_I", "M_U", "F_I", "F_U")
-# )
-# 
-# p9 <- ggplot(subset(weight_means_melt, !(Genotype %in% c("sim198"))),
-#              aes(x = group, y = Mean, group = group)) +
-#   geom_errorbar(aes(ymin = Lower, ymax = Upper), width = 0) +
-#   geom_point(aes(fill = Infected, shape = Sex),
-#              colour = "black", size = 2) +
-#   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
-#   scale_shape_manual(values = c("F" = 21, "M" = 24)) +
-#   scale_y_continuous(trans  = 'log10') +
-#   facet_wrap(~ Genotype, ncol = 1) +
-#   coord_flip() +
-#   theme(strip.text = element_blank(),
-#         axis.text.y  = element_blank(),
-#         axis.ticks.y = element_blank(),
-#         axis.title.y = element_blank()) +
-#   ylab("mean weight (mg)")
-# p9
 
 #-------Calculate LS mean data for SMR WITHOUT weight----------------------------------
 fit_model_by_species <- function(Genotype_val,data_df = hague_df){
@@ -373,32 +294,12 @@ lsmean_table <- metabolic_activity_models |>
 lsmean_table$No_weight_model <- "No_weight"
 
 lsmean_table <- lsmean_table |>
-  # filter(Genotype != "sim198") |>
   mutate(Genotype = factor(Genotype, levels=c("sim198", "mau31", "sech", "Car5","auraL2", "suz", "R84", "teiB13L11", "san", "yakB13L5", "PC75", "FFD25", "CSBerk"))) |>
   arrange(desc(Genotype))
 
 glimpse(lsmean_table)
 
 #-----summarize all SMR WITHOUT weight and generate figure------------------------------------------------------
-## Plot all data
-# SMR_min <- min(hague_df$aveSMR)
-# SMR_max <- max(hague_df$aveSMR)
-# 
-# p10 <- ggplot(subset(hague_df, Genotype != "sim198"), aes(Genotype, y=aveSMR, fill=Infected, group=interaction(Genotype, Infected))) +
-#   geom_violin(position=dodge, aes(fill=Infected)) +
-#   stat_summary(fun.y=median, geom="point", position=dodge, size=1.5, color="black") +
-#   # geom_boxplot(width = 0.5, outlier.shape = NA, position=dodge, fill="white") +
-#   scale_fill_manual(values=c("gray80", "brown1")) +
-#   # geom_point(size=.1, position=position_jitterdodge(dodge.width=0.5, jitter.width=.07, jitter.height = 0)) +
-#   scale_y_continuous(limits = c(SMR_min, SMR_max), trans = 'log10') +
-#   facet_wrap(. ~ Sex) +
-#   scale_x_discrete(limits=rev) + #reverse order of crosses
-#   annotation_logticks(sides="b") +
-#   coord_flip() +
-#   guides(color = guide_legend(reverse=TRUE)) +
-#   ylab("SMR (mol flow)")
-# p10
-
 lsmean_table
 
 lsmean_long <- lsmean_table |>
@@ -422,42 +323,12 @@ p11 <- ggplot(lsmean_long, aes(Genotype, y=emmean, group=group)) +
                     ymax=upper.CL),
                 width=0.3, alpha=1,
                 position = dodge) +
-  # geom_point(size=2, position = dodge) +
   geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-  # scale_x_discrete(limits=rev) + #reverse order of crosses
-  # scale_y_continuous(breaks=c(1.4,1.6,1.8,2.0))+
-  # coord_flip() +
-  # scale_y_continuous(trans = 'log10') +
-  # annotation_logticks(sides="b") +
   guides(color = guide_legend(reverse=TRUE)) +
   ylab("LS mean SMR (nmol min-1)")
 p11
-
-# lsmean_long$Sex <- factor(lsmean_long$Sex, levels = c("M", "F"))
-# 
-# lsmean_long <- lsmean_long %>%
-#   mutate(group = interaction(Sex, Infected, sep = "_"),
-#          group = factor(group, levels = c("M_I", "M_U", "F_I", "F_U")))
-# 
-# p12 <- ggplot(subset(lsmean_long, !(Genotype %in% c("sim198"))), aes(Genotype, y=emmean, group=group)) +
-#   geom_errorbar(aes(ymin=lower.CL,
-#                     ymax=upper.CL),
-#                 width=0.3, alpha=1,
-#                 position = dodge) +
-#   # geom_point(size=2, position = dodge) +
-#   geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
-#   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
-#   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-#   scale_x_discrete(limits=rev) + #reverse order of crosses
-#   # scale_y_continuous(breaks=c(1.4,1.6,1.8,2.0))+
-#   coord_flip() +
-#   # scale_y_continuous(trans = 'log10') +
-#   # annotation_logticks(sides="b") +
-#   guides(color = guide_legend(reverse=TRUE)) +
-#   ylab("LS mean SMR (nmol min-1)")
-# p12
 
 #-------Calculate LS mean data for SMR WITH weight----------------------------------
 fit_model_by_species_weight <- function(Genotype_val,data_df = hague_df){
@@ -518,7 +389,6 @@ lsmean_table_weight <- metabolic_activity_models_weight |>
 lsmean_table_weight$weight_model <- "weight"
 
 lsmean_table_weight <- lsmean_table_weight |>
-  # filter(Genotype != "sim198") |>
   mutate(Genotype = factor(Genotype, levels=c("sim198", "mau31",  "sech", "Car5","auraL2", "suz", "R84", "teiB13L11", "san", "yakB13L5", "PC75", "FFD25", "CSBerk"))) |>
   arrange(desc(Genotype))
 
@@ -549,42 +419,12 @@ p13 <- ggplot(lsmean_long_weight, aes(Genotype, y=emmean, group=group)) +
                     ymax=upper.CL),
                 width=0.3, alpha=1,
                 position = dodge) +
-  # geom_point(size=2, position = dodge) +
   geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-  # scale_x_discrete(limits=rev) + #reverse order of crosses
-  # scale_y_continuous(breaks=c(1.4,1.6,1.8,2.0))+
-  # coord_flip() +
-  # scale_y_continuous(trans = 'log10') +
-  # annotation_logticks(sides="b") +
   guides(color = guide_legend(reverse=TRUE)) +
   ylab("Mass-adjusted LS mean SMR (nmol min-1)")
 p13
-
-# lsmean_long_weight$Sex <- factor(lsmean_long_weight$Sex, levels = c("M", "F"))
-# 
-# lsmean_long_weight <- lsmean_long_weight %>%
-#   mutate(group = interaction(Sex, Infected, sep = "_"),
-#          group = factor(group, levels = c("M_I", "M_U", "F_I", "F_U")))
-# 
-# p14 <- ggplot(subset(lsmean_long_weight, !(Genotype %in% c("sim198"))), aes(Genotype, y=emmean, group=group)) +
-#   geom_errorbar(aes(ymin=lower.CL,
-#                     ymax=upper.CL),
-#                 width=0.3, alpha=1,
-#                 position = dodge) +
-#   # geom_point(size=2, position = dodge) +
-#   geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
-#   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
-#   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-#   scale_x_discrete(limits=rev) + #reverse order of crosses
-#   # scale_y_continuous(breaks=c(1.4,1.6,1.8,2.0))+
-#   coord_flip() +
-#   # scale_y_continuous(trans = 'log10') +
-#   # annotation_logticks(sides="b") +
-#   guides(color = guide_legend(reverse=TRUE)) +
-#   ylab("Mass-adjusted LS mean SMR (nmol min-1)")
-# p14
 
 combined_plots <- ggarrange(p7, p11, p13, nrow=3)
 ggsave("output/phylo_comparisons_metabolism.wb.pdf", plot = combined_plots, width = 10, height = 8, dpi=300, useDingbats=FALSE)
@@ -761,8 +601,6 @@ p15 <- ggplot(slopes_all, aes(Genotype, y=slope, group=Group)) +
   geom_hline(yintercept = 1.0, linetype = "dashed", color = "grey50", linewidth = 0.5) + # Isometry benchmark line (b = 1.0)
   scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
   scale_shape_manual(values = c("F" = 21, "M" = 22)) +
-  # scale_x_discrete(limits=rev) + #reverse order of crosses
-  # coord_flip() +
   guides(color = guide_legend(reverse=TRUE)) +
   ylab("Mass scaling exponent")
 p15
@@ -888,4 +726,117 @@ write_csv(
   slopes_all |> round_numerics(),
   "output/allometric_slopes_covadjusted.csv"
 )
+###########################################################
+# Plot activity data from Hague et al 2021 Biol Lett
+###########################################################
+# Load file with summary data
+hague_df_activity <- read.csv(file = "data/activity_summaryData.csv")
+
+# Remove row where activity recorder seems to not have worked
+hague_df_activity <- hague_df_activity[hague_df_activity$hours123_rawActivity_count > 0,]
+hague_df_activity <- subset(hague_df_activity, is.na(flyID) == FALSE)
+
+# Log transformation
+hague_df_activity$log_hours123_meanActivity <- log10(hague_df_activity$hours123_meanActivity)
+
+#-------Calculate LS mean data for activity----------------------------------
+fit_model_by_species_activity <- function(Genotype_val,data_df = hague_df_activity){
+  
+  df <- data_df |>
+    filter(Genotype == Genotype_val)
+  
+  lm_fit <- lm(log_hours123_meanActivity ~ Infected*Sex + 
+                   Chamber + hours123_startTime + hours123_meanWVppt + hours123_meanRH_pct + hours123_meanTempC + hours123_meanLight_Lux, 
+                   data=df)
+  
+  emm_sex_infected <- emmeans(lm_fit,specs = pairwise ~ Sex:Infected) 
+  emm_sex_infected_df <- as.data.frame(emm_sex_infected$emmeans)
+  contrasts_sex_infected_df <- as.data.frame(emm_sex_infected$contrasts)
+  
+  return(tibble(Genotype = Genotype_val,
+                fitted_model = list(lm_fit),
+                model_summary = list(broom.mixed::tidy(lm_fit)),
+                emm_sex_infected = list(emm_sex_infected_df),
+                contrasts_sex_infected = list(contrasts_sex_infected_df)))
+  
+}
+
+# apply the function to each unique Genotype and combine results
+activity_models <- map(unique(hague_df_activity$Genotype),
+                                  fit_model_by_species_activity) |>
+  bind_rows()
+
+glimpse(activity_models)
+
+### LS mean tables for models WITH weight
+lsmean_table_activity <- activity_models |>
+  select(Genotype, emm_sex_infected) |>
+  unnest(emm_sex_infected) |>
+  
+  # back-transform LS means and confidence intervals
+  mutate(emmean = 10^(emmean),
+         SE = 10^(SE),
+         lower.CL = 10^(lower.CL),
+         upper.CL = 10^(upper.CL)) |>
+  
+  # Create a combined factor for columns
+  unite(
+    col = "sex_infection",
+    Sex, Infected,
+    sep = "_"
+  ) |>
+  
+  # Keep only LS means
+  select(Genotype, sex_infection, emmean, lower.CL, upper.CL, SE) |>
+  
+  pivot_wider(
+    names_from  = sex_infection,
+    values_from = c(emmean, lower.CL, upper.CL, SE)
+  )
+
+lsmean_table_activity$weight_model <- "activity"
+
+lsmean_table_activity <- lsmean_table_activity |>
+  mutate(Genotype = factor(Genotype, levels=c("sim198", "mau31",  "sech", "Car5","auraL2", "suz", "R84", "teiB13L11", "san", "yakB13L5", "PC75", "FFD25", "CSBerk"))) |>
+  arrange(desc(Genotype))
+
+glimpse(lsmean_table_activity)
+
+#-----summarize all SMR WITH weight and generate figure------------------------------------------------------
+lsmean_table_activity
+
+lsmean_long_activity <- lsmean_table_activity |>
+  pivot_longer(
+    cols           = -c(Genotype, weight_model),
+    names_to       = c(".value", "group"),
+    names_pattern  = "(emmean|lower\\.CL|upper\\.CL|SE)_([FM]_[UI])"
+  ) |>
+  separate(group, into = c("Sex", "Infected"), sep = "_")
+
+lsmean_long_activity$Genotype <- factor(lsmean_long_activity$Genotype,levels=c("CSBerk", "FFD25", "PC75", "yakB13L5", "san", "teiB13L11", 
+                                                                           "R84", "suz", "auraL2", "Car5", "sech", "mau31", "sim198"))
+
+lsmean_long_activity$Sex <- factor(lsmean_long_activity$Sex, levels = c("F", "M"))
+
+lsmean_long_activity <- lsmean_long_activity %>%
+  mutate(group = interaction(Sex, Infected, sep = "_"),
+         group = factor(group, levels = c("F_U", "F_I", "M_U", "M_I")))
+
+p17 <- ggplot(lsmean_long_activity, aes(Genotype, y=emmean, group=group)) +
+  geom_errorbar(aes(ymin=lower.CL,
+                    ymax=upper.CL),
+                width=0.3, alpha=1,
+                position = dodge) +
+  geom_point(aes(fill = Infected, shape = Sex), colour = "black", size = 2, position = dodge) +
+  scale_fill_manual(values = c("U" = "gray80", "I" = "brown1")) +
+  scale_shape_manual(values = c("F" = 21, "M" = 22)) +
+  guides(color = guide_legend(reverse=TRUE)) +
+  scale_y_log10() +
+  annotation_logticks(sides="l") +
+  ylab("LS mean activity (ADS)")
+p17
+
+combined_plots <- ggarrange(p7, p11, p13, p15, p17, nrow=5)
+ggsave("output/phylo_comparisons_scaling+activity.wb.pdf", plot = combined_plots, width = 10, height = 13, dpi=300, useDingbats=FALSE)
+
 

@@ -103,16 +103,15 @@ lm_model_by_species <- hague_df_weight_reduced |>
   summarise(
     model = list(lm(Weight_mg ~ Sex + Infected + Sex:Infected, data = pick(everything()))),
 
-    # Second model fit with sum-to-zero contrasts, used ONLY for the Type III F-test ANOVA
     model_sum = list(lm(Weight_mg ~ Sex + Infected + Sex:Infected,
                         data = pick(everything()),
                         contrasts = list(Sex = contr.sum, Infected = contr.sum)))
   ) |>
   mutate(
     mod_resids = map(model, residuals),
-    tidy_output = map(model, tidy),        # Coefficients, p-values, etc.
-    glance_output = map(model, glance),     # Model-level stats (R², AIC, etc.)
-    # Type III ANOVA with F-tests on the sum-coded model
+    tidy_output = map(model, tidy),        
+    glance_output = map(model, glance),     
+    
     anova_output = map(
       model_sum,
       ~ car::Anova(.x, type = "III") |>
@@ -127,7 +126,7 @@ lm_model_by_species <- hague_df_weight_reduced |>
     ),
     emmeans_summary = map(
       emmeans_output,
-      ~ summary(.x, infer = TRUE)  # gives estimates + 95% CI
+      ~ summary(.x, infer = TRUE) 
     )
   )
 
@@ -154,27 +153,22 @@ p1 <- lm_model_by_species_tidy |>
         geom_point(position=position_dodge(width=0.5), size=3) +
         geom_errorbar(aes(ymin=lwr_ci,ymax=upr_ci),width=0,alpha=1,
                       position=position_dodge(width=0.5)) +
-        #facet_wrap(~term) +
-        # scale_color_colorblind() +
         scale_color_manual(values=c("#D55E00", "#E69f00", "#56B4E9")) +
         scale_shape_manual(
           values = c("yes" = 16, "no" = 1)) +
         theme(axis.text.x = element_text(angle=45,hjust=1)) +
         labs(y="Estimate with 95% CI",color="Trem")
-        # add species counts to x-axis labels
-        # scale_x_discrete(labels = function(x) paste0(x, " (n=", species_counts$n[match(x, species_counts$Genotype)], ")"))
 p1
 
 ggsave("output/wb.weight.pdf", plot = p1, width = 6, height = 4, dpi=300, useDingbats=FALSE)
 
 #-------------------------------------------------------------------------------
-# CSV 1: Regression coefficients (one row per Genotype, grouped columns per term)
+# CSV 1: Regression coefficients
 #-------------------------------------------------------------------------------
 
 coef_table <- lm_model_by_species_tidy |>
   select(Genotype, term, estimate, std.error, statistic, p.value) |>
   filter(term %in% c("SexM", "InfectedI", "SexM:InfectedI")) |>
-  # add significance stars
   mutate(significance = case_when(
     p.value < 0.001 ~ "***",
     p.value < 0.01  ~ "**",
@@ -182,7 +176,6 @@ coef_table <- lm_model_by_species_tidy |>
     TRUE            ~ "ns"
   ))
 
-# define predictor order for column grouping
 coef_terms <- c("SexM", "InfectedI", "SexM:InfectedI")
 coef_suffixes <- c("_estimate", "_std.error", "_statistic", "_p.value", "_significance")
 coef_col_order <- c("Genotype", "n",
@@ -211,15 +204,13 @@ glimpse(coef_table_wide)
 write_csv(coef_table_wide, "output/wb.weight_coefficients.csv")
 
 #-------------------------------------------------------------------------------
-# CSV 2: Type III F-test ANOVA (one row per Genotype, grouped columns per term)
+# CSV 2: Type III F-test ANOVA
 #-------------------------------------------------------------------------------
 
 anova_table <- lm_model_by_species |>
   select(Genotype, anova_output) |>
   unnest(anova_output) |>
-  # drop the intercept and residual rows; keep the effects of interest
   filter(!(term %in% c("(Intercept)", "Residuals"))) |>
-  # add significance stars
   mutate(significance = case_when(
     p.value < 0.001 ~ "***",
     p.value < 0.01  ~ "**",
@@ -229,14 +220,12 @@ anova_table <- lm_model_by_species |>
 
 glimpse(anova_table)
 
-# pull the residual (error) df per genotype so it can be reported alongside
 anova_resid_df <- lm_model_by_species |>
   select(Genotype, anova_output) |>
   unnest(anova_output) |>
   filter(term == "Residuals") |>
   select(Genotype, den_df = num_df)
 
-# define predictor order for column grouping
 anova_terms <- c("Sex", "Infected", "Sex:Infected")
 anova_suffixes <- c("_F_value", "_num_df", "_p.value", "_significance")
 anova_col_order <- c("Genotype", "n", "den_df",
@@ -274,12 +263,10 @@ min <- min(hague_df_weight_reduced$Weight_mg)
 max <- max(hague_df_weight_reduced$Weight_mg)
 
 p2 <- ggplot(data=hague_df_weight_reduced, aes(x=Sex, y=Weight_mg, fill=Infected, group=interaction(Sex, Infected))) + 
-  # geom_point(size=1, position=position_jitterdodge(dodge.width=.5, jitter.width=.01)) +
   facet_wrap(. ~ Genotype, nrow=2) +
   geom_violin(color=NA, position=dodge, aes(fill=Infected), width=1) + 
   geom_boxplot(width = 0.6, outlier.shape = NA, position=dodge, fill="white") +
   scale_fill_manual(values=c("gray80", "brown1")) +
-  # geom_point(size=.1, position=position_jitterdodge(dodge.width=0.5, jitter.width=.07, jitter.height = 0)) +
   scale_y_continuous(trans='log10', limits = c(min, max)) +
   annotation_logticks(sides="l") +
   labs(y = "Body mass (mg)")

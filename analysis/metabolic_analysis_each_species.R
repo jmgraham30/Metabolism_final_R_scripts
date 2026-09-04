@@ -63,12 +63,10 @@ min <- min(hague_df$aveSMR)
 max <- max(hague_df$aveSMR)
 
 p1 <- ggplot(data=hague_df, aes(x=Sex, y=aveSMR, fill=Infected, group=interaction(Sex, Infected))) + 
-  # geom_point(size=1, position=position_jitterdodge(dodge.width=.5, jitter.width=.01)) +
   facet_wrap(. ~ Genotype, nrow=2) +
   geom_violin(color=NA, position=dodge, aes(fill=Infected), width=1) + 
   geom_boxplot(width = 0.6, outlier.shape = NA, position=dodge, fill="white") +
   scale_fill_manual(values=c("gray80", "brown1")) +
-  # geom_point(size=.1, position=position_jitterdodge(dodge.width=0.5, jitter.width=.07, jitter.height = 0)) +
   scale_y_continuous(trans='log10', limits = c(min, max)) +
   annotation_logticks(sides="l") +
   labs(y = "SMR")
@@ -225,14 +223,14 @@ csv_table_wide <- metabolic_activity_models_summary |>
 write_csv(csv_table_wide, "output/wb.SMR_noWeight.csv")
 
 #-------------------------------------------------------------------------------
-# Type III ANOVA tables (one row per Genotype x term)
+# Type III ANOVA tables
 #-------------------------------------------------------------------------------
 
-# unnest the per-genotype ANOVA results
+# unnest the per-Genotype ANOVA results
 anova_table <- metabolic_activity_models |>
   select(Genotype, anova_F_results) |>
   unnest(anova_F_results) |>
-  # drop the intercept row; it is not a meaningful effect to report
+  # drop the intercept row
   filter(term != "(Intercept)") |>
   # add significance stars
   mutate(significance = case_when(
@@ -252,7 +250,6 @@ anova_suffixes <- c("_F_value", "_num_df", "_den_df", "_p.value", "_significance
 anova_col_order <- c("Genotype", "n",
                      as.vector(t(outer(anova_terms, anova_suffixes, paste0))))
 
-# build a well-organized table: one row per Genotype, grouped columns per term
 anova_table_wide <- anova_table |>
   mutate(
     F_value = round(F_value, 3),
@@ -459,7 +456,7 @@ csv_table_wide_weight <- metabolic_activity_models_summary_weight |>
 write_csv(csv_table_wide_weight, "output/wb.SMR_Weight.csv")
 
 #-------------------------------------------------------------------------------
-# Type III ANOVA tables (one row per Genotype x term)
+# Type III ANOVA tables
 #-------------------------------------------------------------------------------
 
 # unnest the per-genotype ANOVA results
@@ -486,7 +483,6 @@ anova_suffixes <- c("_F_value", "_num_df", "_den_df", "_p.value", "_significance
 anova_col_order_weight <- c("Genotype", "n",
                             as.vector(t(outer(anova_terms_weight, anova_suffixes, paste0))))
 
-# build a well-organized table: one row per Genotype, grouped columns per term
 anova_table_wide_weight <- anova_table_weight |>
   mutate(
     F_value = round(F_value, 3),
@@ -553,7 +549,6 @@ lsmean_table_weight <- metabolic_activity_models_weight |>
 lsmean_table_weight$weight_model <- "Weight_Only"
 
 lsmean_table_weight <- lsmean_table_weight |>
-  # filter(Genotype != "sim198") |>
   mutate(Genotype = factor(Genotype, levels=c("mau31", "sim198", "sech", "Car5","auraL2", "suz", "R84", "teiB13L11", "san", "yakB13L5", "PC75", "FFD25", "CSBerk"))) |>
   arrange(desc(Genotype))
 
